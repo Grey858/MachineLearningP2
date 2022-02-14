@@ -46,7 +46,7 @@ MLD.set_num_classifications(2)
 
 # arguments are: x_train, x_test, y_train, y_test
 MLD.set_default_data(x[:4], x[4:], y[:4], y[4:])
-MLD.add_algo(MLD.ML_Algo(dtree_init, predict, "dtree"),1)
+MLD.add_algo(MLD.ML_Algo(dtree_init, predict, "dtree"),10)
 MLD.train_algos() # add nullable args for funnel or not
 MLD.current_algos()
 MLD.validate_voting(x[4:], y[4:], method=0) # change this back to validate, when training set function to vote or not

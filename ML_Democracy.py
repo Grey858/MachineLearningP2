@@ -43,7 +43,7 @@ class ML_Algo:
     self.indices=None
   
   def copy(self):
-    cp = ML_Algo(self.init_function, self.predict_function, self.model_name, self.x_train, self.y_train, self.x_test, self.y_test, axis=-1)
+    cp = ML_Algo(self.init_func, self.predict_func, self.name, self.x_train, self.y_train, self.x_test, self.y_test, axis=-1)
     return cp
 def set_default_data(x_train, x_test, y_train, y_test):
   global __default_x_train__ 
