@@ -2,6 +2,7 @@ from turtle import left
 from unicodedata import category
 import numpy as np
 import pandas as pd
+from sklearn import datasets
 
 class dtree:
   class treenode:
@@ -13,9 +14,22 @@ class dtree:
     leaf = False
     category = -1
     split = -1
+
+    left_dat = None
+    right_dat = None
+    left_lab = None
+    right_lab = None
     
-    def __init__(self, data=None, parent=None):
+    def __init__(self, data=None, labels = None, parent=None):
       self.parent = parent
+      self.data = data
+      self.labels = labels
+      if len(np.unique(self.labels))<=1:
+        print("This node's data is homogenious")
+        self.leaf = True
+      if self.parent.cutoff > self.labels.shape[0]:
+        self.leaf = True
+
       print("Initializing node")
       return self
     def classify(self, x):
@@ -25,20 +39,15 @@ class dtree:
           return self.children[0].classify(x)
         else:
           return self.children[1].classify(x)
-      #If this node needs to classify, we pick the most likely class
+      # If this node Is a leaf node, then it will not split anything and can return 
+      # it's most common class
       else:
-        left_dat = dict()
-        right_dat = dict()
+        dat_count = dict()
         for i in range(self.data.shape[0]):
-          if self.data[i][self.category] < self.split:
-            left_dat[self.labels[i]] = left_dat.get(self.labels[i], 0) + 1
-          else:
-            right_dat[self.labels[i]] = left_dat.get(self.labels[i], 0) + 1
+          dat_count[self.labels[i]] = dat_count.get(self.labels[i], 0) + 1
         #return the key with the max value = classification with max likelyhood
-        if x[self.category]<self.split:
-          return max(left_dat, left_dat.get)
-        else:
-          return max(right_dat, right_dat.get)
+        return max(dat_count, dat_count.get)
+      
     def split_points(self,col):
       #return the split points for this column as a list
       points = list()
@@ -74,6 +83,7 @@ class dtree:
       right_dat = self.data[right_ind,:]
       left_lab = self.labels[left_ind]
       right_lab = self.labels[right_ind]
+    def leaf_split(self):
 
   root = None
   split_method = "entropy" #entropy, misclassification, gini
@@ -94,11 +104,11 @@ class dtree:
 
   def __init__(self, method="entropy"):
     self.split_method = method
-    if method == "misclassification":
+    if method == "entropy":
       self.split_func = self.__entropy__
     elif method == "gini":
       self.split_func = self.__gini__
-    elif method == "entropy":
+    elif method == "missclassification":
       self.split_func = self.__missclassification__
   
   # returns numpy array where all values are continuous and
