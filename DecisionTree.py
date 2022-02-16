@@ -118,9 +118,13 @@ class dtree(object):
   def __gini__():
     print("Doing gini calc")
     return 0.5
-  def __missclassification__():
-    print("Doing missclass calc")
-    return 0.5
+  def __missclassification__(s_points, data, labels):
+    dat_count = dict()
+    for i in range(data.shape[0]):
+      dat_count[labels[i]] = dat_count.get(labels[i], 0) + 1
+    #return the key with the max value = classification with max likelyhood
+    correct = max(dat_count, dat_count.get)/labels.shape[0]
+    return correct
 
   def __init__(self, method="entropy", min_data_size = 10, min_info = 0.01):
     self.split_method = method
