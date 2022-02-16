@@ -118,7 +118,7 @@ class dtree(object):
   def __gini__():
     print("Doing gini calc")
     return 0.5
-  def __missclassification__(s_points, data, labels):
+  def __missclassification__(self, s_points, data, labels):
     l_types = np.unique(labels)
     info=0
     s_point = -1
@@ -132,21 +132,15 @@ class dtree(object):
       right_lab = labels[right_ind]
       
       dat_count = dict()
-      #r_key = -1
-      r_max = -1
-      #l_key = -1
-      for i in range(data.shape[0]):
-        dat_count[left_lab[i]] = dat_count.get(left_lab[i], 0) + 1
-      #l_key = max(dat_count, dat_count.get)
-      l_max = max(dat_count)
+      for j in range(left_lab.shape[0]):
+        dat_count[left_lab[j]] = dat_count.get(left_lab[j], 0) + 1
+      l_max = dat_count[max(dat_count)]
       dat_count = dict()
-      for i in range(data.shape[0]):
-        dat_count[right_lab[i]] = dat_count.get(right_lab[i], 0) + 1
-      #r_key = max(dat_count, dat_count.get)
-      r_max = max(dat_count)
-      
+      for j in range(right_lab.shape[0]):
+        dat_count[right_lab[j]] = dat_count.get(right_lab[j], 0) + 1
+      r_max = dat_count[max(dat_count)]
       temp_info = (r_max + l_max)/data.shape[0]
-
+      
       if(temp_info > info):
         info = temp_info
         s_point = i
