@@ -6,6 +6,7 @@ from argparse import ArgumentError
 import time
 import numpy as np
 import random
+import time
 
 from scipy.sparse import data
 __default_x_train__ = None
@@ -90,6 +91,11 @@ def remove_all_algos():
 def train_algos(output=False, featureProportion=-1.0, bag=False):
   if featureProportion>1.0:
     raise ArgumentError("Feature proportion cannot be more than 1.0")
+  
+  indTime=0
+  bagTime=0
+  trainTime=0
+  
   for i in __algos__: 
     if not i.pre_trained:
       tx = i.x_train 
@@ -99,9 +105,11 @@ def train_algos(output=False, featureProportion=-1.0, bag=False):
 
       indices=list()
       if(featureProportion>=0):
+        #st=time.time()
         indices = list(random.sample(list(np.arange(0,tx.shape[i.axis])),int(tx.shape[i.axis]*featureProportion)))
         indices.sort()
         i.indices=indices
+        #print(i.indices)
       else:
         indices = None
         i.indices=None
@@ -119,20 +127,25 @@ def train_algos(output=False, featureProportion=-1.0, bag=False):
         tx = np.take(tx, indices,axis=i.axis)
         tex = np.take(tex, indices,axis=i.axis)
 
+      #indTime += time.time()-st
       if bag:
+        st=time.time()
         choices = random.choices(population=list(np.arange(0,len(i.x_train))),k=len(i.x_train))
         tx = tx[choices]
         ty = ty[choices]
         choices = random.choices(population=list(np.arange(0,len(i.x_test))),k=len(i.x_test))
         tex = tex[choices]
         tey = tey[choices]
+        #bagTime+=time.time()-st
+
 
       start = time.time()
       i.train_score, i.test_score, i.model = i.init_func(tx, ty, tex, tey)
       i.train_time = time.time()-start
+      #trainTime += i.train_time
       if output:
         print(f"{i.name}, train: {i.train_score}, test: {i.test_score}, time: {i.train_time}")
-
+  #print(f"ind time: {indTime}, bagtime: {bagTime}, traintime: {trainTime}")
 def __vote__(datapoint, method):
   class_votes = np.zeros((__num_classifications__, len(datapoint)), dtype='float32')
   abs_class_votes = np.zeros(len(datapoint), dtype='float32')
@@ -147,6 +160,7 @@ def __vote__(datapoint, method):
       predictions = i.predict_func(i.model, datapoint) # predict should output a number, not a one-hot encoding
     else:
       predictions = i.predict_func(i.model, np.take(datapoint, i.indices,axis=i.axis))
+    
     #print(predictions)
     #print(f'{i.name} prediction: {j}, test score: {i.test_score} weight: {weight}')
     for j in range(len(datapoint)):
@@ -184,17 +198,17 @@ def predict_no_vote(x):
   return predictions
 
 def validate_voting(x, y, method=1):
-  print("Validating voting ensemble method...")
+  print(f"Validating voting ensemble method: {method}")
   num_right = 0
   predictions = predict(x, method)
   #print(f'shape of x: {x.shape}, len x: {len(x)}')
-  for i in range(len(x)):
+  for i in range(len(y)):
     #print(f'y actual: {y[i]}')
     if(predictions[i] == y[i]):
       num_right+=1
       #print("correct")
     #input()
-  print(f'Score: {num_right*1.0/len(x)}')
+  print(f'Score: {num_right*1.0/len(y)}, {num_right} / {len(y)}')
   return num_right*1.0/len(x)
 
 def append_model_outputs(x, debug=False):
@@ -243,3 +257,9 @@ def current_algos_raw():
     algodict['time']  = i.train_time
     algosList.append(algodict)
   return algosList
+
+def train_time():
+  tot=0
+  for i in __algos__:
+    tot+=i.train_time
+  return tot
