@@ -153,7 +153,7 @@ class dtree(object):
       return ""
   
   root = None
-  split_method = "entropy" #entropy, misclassification, gini
+  split_method = "gini" #entropy, misclassification, gini
   cutoff = 1 
   info_cutoff = 0.01
   split_func = None
@@ -182,6 +182,7 @@ class dtree(object):
       r_sum = 0
       for j in dat_count:
         r_sum += dat_count[j] * math.log(dat_count[j],2)
+      # temp_info = math.pow(2,(-r_sum - l_sum)/data.shape[0])
       temp_info = math.pow(2,(-r_sum - l_sum)/data.shape[0])
       #print(temp_info)
       #input()
@@ -210,14 +211,17 @@ class dtree(object):
         dat_count[left_lab[j]] = dat_count.get(left_lab[j], 0) + 1
       l_sum = 0
       for j in dat_count:
-        l_sum += dat_count[j] * (1- dat_count[j])
+        pl = dat_count[j]/data.shape[0]
+        l_sum += pl * (1- pl)
       dat_count = dict()
       for j in range(right_lab.shape[0]):
         dat_count[right_lab[j]] = dat_count.get(right_lab[j], 0) + 1
       r_sum = 0
       for j in dat_count:
-        r_sum += dat_count[j] * (1- dat_count[j])
-      temp_info = (r_sum + l_sum)/data.shape[0]
+        pl = dat_count[j]/data.shape[0]
+        r_sum += pl * (1- pl)
+      temp_info = (r_sum + l_sum)#/data.shape[0]
+      #print("[+] r: %.4f, l %.4f, len %d" % (r_sum, l_sum, data.shape[0]))
       
       if(temp_info > info):
         info = temp_info
