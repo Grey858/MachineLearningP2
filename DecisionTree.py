@@ -195,9 +195,39 @@ class dtree(object):
       input()
     return info, s_point
 
-  def __gini__():
-    print("Doing gini calc")
-    return 0.5
+  def __gini__(self, s_points, data, labels):
+    info=0
+    s_point = -1
+    for i in s_points:
+      #split the data by s_points
+      left_ind = np.where(data <  i)[0]    
+      right_ind = np.where(data >= i)[0]
+      left_lab = labels[left_ind]
+      right_lab = labels[right_ind]
+      
+      dat_count = dict()
+      for j in range(left_lab.shape[0]):
+        dat_count[left_lab[j]] = dat_count.get(left_lab[j], 0) + 1
+      l_sum = 0
+      for j in dat_count:
+        l_sum += dat_count[j] * (1- dat_count[j])
+      dat_count = dict()
+      for j in range(right_lab.shape[0]):
+        dat_count[right_lab[j]] = dat_count.get(right_lab[j], 0) + 1
+      r_sum = 0
+      for j in dat_count:
+        r_sum += dat_count[j] * (1- dat_count[j])
+      temp_info = (r_sum + l_sum)/data.shape[0]
+      
+      if(temp_info > info):
+        info = temp_info
+        s_point = i
+      #find the % classified correctly in each side
+    if(info==0):
+      print("error, info of 0 found, hit enter to continue")
+      input()
+    return info, s_point
+    
   def __missclassification__(self, s_points, data, labels, verbose=False):
     l_types = np.unique(labels)
     info=0
