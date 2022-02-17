@@ -21,7 +21,7 @@ def get_blobs(tvts = [0.7,0.15,0.15]):
 
 
 def dtree_init(x_train, y_train, x_test, y_test):
-  dt = dtree(method="missclassification")
+  dt = dtree(method="entropy")
   dt.fit(x_train, y_train)
   test_score = dt.score(x=x_test, y=y_test)
   train_score = dt.score(x=x_train, y=y_train)
