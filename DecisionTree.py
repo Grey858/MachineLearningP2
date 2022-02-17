@@ -153,7 +153,7 @@ class dtree(object):
       return ""
   
   root = None
-  split_method = "gini" #entropy, misclassification, gini
+  split_method = "entropy" #entropy, misclassification, gini
   cutoff = 1 
   info_cutoff = 0.01
   split_func = None
@@ -175,15 +175,17 @@ class dtree(object):
         dat_count[left_lab[j]] = dat_count.get(left_lab[j], 0) + 1
       l_sum = 0
       for j in dat_count:
-        l_sum += dat_count[j] * math.log(dat_count[j],2)
+        pl = dat_count[j]/data.shape[0]
+        l_sum += pl * math.log(pl,2)
       dat_count = dict()
       for j in range(right_lab.shape[0]):
         dat_count[right_lab[j]] = dat_count.get(right_lab[j], 0) + 1
       r_sum = 0
       for j in dat_count:
-        r_sum += dat_count[j] * math.log(dat_count[j],2)
+        pl = dat_count[j]/data.shape[0]
+        r_sum += pl * math.log(pl,2)
       # temp_info = math.pow(2,(-r_sum - l_sum)/data.shape[0])
-      temp_info = math.pow(2,(-r_sum - l_sum)/data.shape[0])
+      temp_info = (-r_sum - l_sum)
       #print(temp_info)
       #input()
       if(temp_info > info):
@@ -307,7 +309,7 @@ class dtree(object):
       df[i] = df[i].rank(method='dense', ascending=False).astype(int)
     return df
   def predict(self,x):
-    print("Predicting data")
+    #print("Predicting data")
     predictions = list()
     for i in x:
       predictions.append(self.root.classify(i))
