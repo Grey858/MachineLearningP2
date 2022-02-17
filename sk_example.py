@@ -1,5 +1,5 @@
 import ML_Democracy as MLD
-from sklearn.tree import DecisionTreeClassifier
+from DecisionTree import dtree
 import numpy as np
 import pandas as pd
 
@@ -25,10 +25,12 @@ y=np.array([0,0,1,1,0,0,1])
 # return the model's desired score metric on train and test
 # and also return a reference to that model
 def dtree_init(x_train, y_train, x_test, y_test):
-  dtree = DecisionTreeClassifier().fit(x_train, y_train)
-  test_score = dtree.score(x_test, y_test)
-  train_score = dtree.score(x_train, y_train)
-  return train_score, test_score, dtree
+    dt = dtree(method="Missclassification", min_data_size=30, min_info=0.5)
+    dt.fit(x_train, y_train)
+    test_score = dt.score(x=x_test, y=y_test)
+    train_score = dt.score(x=x_train, y=y_train)
+    return train_score, test_score, dt
+  
 
 # This function wont usually change, but I wrote the
 # Library to be used with cross platform libraries and
