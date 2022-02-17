@@ -53,7 +53,6 @@ def get_adult(tvts=[0.7,0.15,0.15]):
   
   df = dtree.integer_mapping(None,df,cats)
   print(df.head())
-  input()
   #df = dtree.make_dummies(None, df, cats)
   
   data = df.to_numpy()
@@ -101,8 +100,8 @@ def get_MNIST():
 
 
 bag=[True,False]
-methods=["missclassification", "entropy"]
-data_sizes=[200,100,50]
+methods=["entropy", "gini", "missclassification"]
+data_sizes=[20,10,2]
 min_infos=[0.05]
 num_trees=[50,100,150]
 filename = "adult_cat"
@@ -117,6 +116,7 @@ fp.append(num_fet/tx.shape[1]+0.001)
 print(num_fet)
 print(fp)
 fp=[0.1,0.3,0.5,-1]
+#fp=[0.6,-1]
 #mytree = dtree(method="missclassification", min_data_size=20, min_info=0.05, depth_cutoff=5)
 #mytree.fit(tx, ty)
 #print(mytree.score(tx,ty))
@@ -158,7 +158,7 @@ def get_accuracy(f, b, m, ds, minf, numt, deeta):
   MLD.set_default_data(tx, tvx, ty, tvy)
   MLD.add_algo(MLD.ML_Algo(dtree_init, predict, "dtree"),numt)
   MLD.train_algos(featureProportion=f, bag=b) # add nullable args for funnel or not
-  MLD.current_algos()
+  #MLD.current_algos()
   print(f"time taken total: {MLD.train_time()}")
   t = MLD.train_time()
   v1 = MLD.validate_voting(tex, tey, method=0) # change this back to validate, when training set function to vote or not
@@ -185,12 +185,12 @@ def get_accuracy(f, b, m, ds, minf, numt, deeta):
   new_row["VM3 Test"] = v3
   deeta=deeta.append(new_row, ignore_index=True)
 
-  print(deeta.head())
+  #print(deeta.head())
   return (v1+v2+v3)/3, deeta
 
 bestScore = 0
 bestParams = list()
-bf = 0
+bf = fp[0]
 for i,f in enumerate(fp):
   temp, deeta = get_accuracy(f, bag[0], methods[0], data_sizes[0], min_infos[0], num_trees[0], deeta)
   if temp>bestScore:
@@ -201,25 +201,33 @@ deeta.to_csv(filename+"_results.csv")
 print(f"Best score: {bestScore} with params {bestParams}")
 print(bestParams)
 
-bb=0
+bb=bag[0]
 for i,b in enumerate(bag):
   temp, deeta = get_accuracy(bf, b, methods[0], data_sizes[0], min_infos[0], num_trees[0], deeta)
   if temp>bestScore:
+    print(f"Bag beat previous best {bag}")
     bb=b
     bestScore = temp
-    bestParams = [bf, b, methods[0], data_sizes[0], min_infos[0], num_trees[0]]
+    bestParams = [bf, bb, methods[0], data_sizes[0], min_infos[0], num_trees[0]]
+print(f"bb: {bb}")
 deeta.to_csv(filename+"_results.csv")  
 print(f"Best score: {bestScore} with params {bestParams}")
 print(bestParams)
 
-bm=0
+bm=methods[0]
 for i,m in enumerate(methods):
   temp, deeta = get_accuracy(bf, bb, m, data_sizes[0], min_infos[0], num_trees[0], deeta)
+  
+  print("___________________________________________________")
+  print(f"temp {temp}, bestScore {bestScore}")
+  print(f"m {m}")
   if temp>bestScore:
+    print(f"Chose m: {m}")
     bm=m
     bestScore = temp
-    bestParams = [bf, b, m, data_sizes[0], min_infos[0], num_trees[0]]
-bds=0
+    bestParams = [bf, bb, bm, data_sizes[0], min_infos[0], num_trees[0]]
+  print("___________________________________________________")
+bds=data_sizes[0]
 
 
 deeta.to_csv(filename+"_results.csv")  
@@ -228,36 +236,36 @@ print(bestParams)
 
 
 for i,ds in enumerate(data_sizes):
-  temp, deeta = get_accuracy(bf, bb, m, ds, min_infos[0], num_trees[0], deeta)
+  temp, deeta = get_accuracy(bf, bb, bm, ds, min_infos[0], num_trees[0], deeta)
   if temp>bestScore:
     bds=ds
     bestScore = temp
-    bestParams = [bf, b, m, ds, min_infos[0], num_trees[0]]
+    bestParams = [bf, bb, bm, bds, min_infos[0], num_trees[0]]
 
 deeta.to_csv(filename+"_results.csv")  
 print(f"Best score: {bestScore} with params {bestParams}")
 print(bestParams)
 
-bminf = 0
+bminf = min_infos[0]
 for i,minf in enumerate(min_infos):
-  temp, deeta = get_accuracy(bf, bb, m, ds, minf, num_trees[0], deeta)
+  temp, deeta = get_accuracy(bf, bb, bm, bds, minf, num_trees[0], deeta)
   if temp>bestScore:
     bminf=minf
     bestScore = temp
-    bestParams = [bf, b, m, ds, minf, num_trees[0]]
+    bestParams = [bf, bb, bm, bds, bminf, num_trees[0]]
 
 
 deeta.to_csv(filename+"_results.csv")  
 print(f"Best score: {bestScore} with params {bestParams}")
 print(bestParams)
 
-bnumt=0
+bnumt=num_trees[0]
 for i,numt in enumerate(num_trees):
-  temp, deeta = get_accuracy(bf, bb, m, ds, minf, numt, deeta)
+  temp, deeta = get_accuracy(bf, bb, bm, bds, bminf, numt, deeta)
   if temp>bestScore:
     bnumt=numt
     bestScore = temp
-    bestParams = [bf, b, m, ds, minf, numt]
+    bestParams = [bf, bb, bm, bds, bminf, bnumt]
 
 print(f"Best score: {bestScore} with params {bestParams}")
 print(bestParams)

@@ -217,14 +217,17 @@ class dtree(object):
         dat_count[left_lab[j]] = dat_count.get(left_lab[j], 0) + 1
       l_sum = 0
       for j in dat_count:
-        l_sum += dat_count[j] * math.log(dat_count[j],2)
+        pl = dat_count[j]/data.shape[0]
+        l_sum += pl * math.log(pl,2)
       dat_count = dict()
       for j in range(right_lab.shape[0]):
         dat_count[right_lab[j]] = dat_count.get(right_lab[j], 0) + 1
       r_sum = 0
       for j in dat_count:
-        r_sum += dat_count[j] * math.log(dat_count[j],2)
-      temp_info = math.pow(2,(-r_sum - l_sum)/data.shape[0])
+        pl = dat_count[j]/data.shape[0]
+        r_sum += pl * math.log(pl,2)
+      # temp_info = math.pow(2,(-r_sum - l_sum)/data.shape[0])
+      temp_info = (-r_sum - l_sum)
       #print(temp_info)
       #input()
       if(temp_info > info):
@@ -237,9 +240,42 @@ class dtree(object):
       input()
     return info, s_point
 
-  def __gini__():
-    print("Doing gini calc")
-    return 0.5
+  def __gini__(self, s_points, data, labels):
+    info=0
+    s_point = -1
+    for i in s_points:
+      #split the data by s_points
+      left_ind = np.where(data <  i)[0]    
+      right_ind = np.where(data >= i)[0]
+      left_lab = labels[left_ind]
+      right_lab = labels[right_ind]
+      
+      dat_count = dict()
+      for j in range(left_lab.shape[0]):
+        dat_count[left_lab[j]] = dat_count.get(left_lab[j], 0) + 1
+      l_sum = 0
+      for j in dat_count:
+        pl = dat_count[j]/data.shape[0]
+        l_sum += pl * (1- pl)
+      dat_count = dict()
+      for j in range(right_lab.shape[0]):
+        dat_count[right_lab[j]] = dat_count.get(right_lab[j], 0) + 1
+      r_sum = 0
+      for j in dat_count:
+        pl = dat_count[j]/data.shape[0]
+        r_sum += pl * (1- pl)
+      temp_info = (r_sum + l_sum)#/data.shape[0]
+      #print("[+] r: %.4f, l %.4f, len %d" % (r_sum, l_sum, data.shape[0]))
+      
+      if(temp_info > info):
+        info = temp_info
+        s_point = i
+      #find the % classified correctly in each side
+    if(info==0):
+      print("error, info of 0 found, hit enter to continue")
+      input()
+    return info, s_point
+    
   def __missclassification__(self, s_points, data, labels, verbose=False):
     info=0
     s_point = -1
@@ -323,7 +359,7 @@ class dtree(object):
       predictions.append(self.root.classify(i))
     return np.array(predictions)
   def fit(self, x, y):
-    print(f"starting fit x shape: {x.shape}")
+    #print(f"starting fit x shape: {x.shape}")
     x2 = np.sort(x, 0)
     self.root = self.treenode(data=x, sortedData=x2, labels=y, parent=self, categories=list(np.arange(0,x.shape[1],1,int)))
     self.root.set_split()
