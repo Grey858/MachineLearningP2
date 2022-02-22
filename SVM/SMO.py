@@ -40,8 +40,8 @@ class svm:
     return temp
 
   def get_b(self, b, Ei,Ej, yi,yj, newai,oldai, newaj,oldaj, xi,xj, kernel, C):
-    print(f"Calc b: b {b}, Ei {Ei}, Ej {Ej}, yi {yi}, yj {yj}, newai {newai}, oldai {oldai}, newaj {newaj}, oldaj {oldaj}, xi {xi}, xj {xj}")
-    print()
+    #print(f"Calc b: b {b}, Ei {Ei}, Ej {Ej}, yi {yi}, yj {yj}, newai {newai}, oldai {oldai}, newaj {newaj}, oldaj {oldaj}, xi {xi}, xj {xj}")
+    #print()
     temp=b
     b1 = b-Ei - yi*(newai-oldai)*kernel(xi,xi) - yj*(newaj-oldaj)*kernel(xi,xj)
     b2 = b-Ej - yi*(newai-oldai)*kernel(xi,xj) - yj*(newaj-oldaj)*kernel(xj,xj)
@@ -68,10 +68,13 @@ class svm:
     print(f"C: {self.C}")
     print(f"tol: {self.tol}")
     print("Support vectors: ")
+    temp=np.zeros(self.x.shape[1])
     for i,ai in enumerate(self.a):
-      if ai>0.00001:
+      if ai>0:
         print(f"a{i}: {self.a[i]}, x{i}: {self.x[i]}, y{i}: {self.y[i]}")
-
+        temp+=self.x[i]*self.a[i]*self.y[i]
+    print(f"coefs: {temp} + {self.b}")
+    return temp,self.b
   def dot(self,v1, v2):
     return np.dot(v1,v2)
   def gausian(self,v1,v2):
