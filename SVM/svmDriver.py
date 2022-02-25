@@ -1,67 +1,58 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.utils import shuffle
 from DecisionTree import dtree
-#from sklearn.tree import DecisionTreeClassifier
 from dataset import blobs
 from dataset import spirals
 import math
 import time
 from SMO import svm
+from sklearn.model_selection import train_test_split
 
-def get_blobs(tvts = [0.7,0.15,0.15]):
+def get_blobs():
   data = blobs(200, [np.array([1, 2]), np.array([5, 6])], [np.array([[0.25, 0], [0, 0.25]])] * 2).to_numpy()
-  l = data.shape[0]
-
   for i in range(data.shape[0]):
     if data[i,2]==0:
       data[i,2]=-1
 
-  #print(data[:,2])
-  #input()
+  train, test = train_test_split(data, train_size=0.75,shuffle=True)
+  tx = train[:,:2]
+  ty = train[:,2]
+  tex = test[:,:2]
+  tey = test[:,2]
 
-  tx = data[0:int(l*tvts[0]),:2]
-  ty = data[0:int(l*tvts[0]),2:].astype(int).flatten()
-  tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1]),:2]
-  tvy = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1]),2:].astype(int).flatten()
-  tex = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2]),:2]
-  tey = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2]),2:].astype(int).flatten()
-  return tx, ty, tvx, tvy, tex, tey
+  return tx,ty,tex,tey
 
-def get_blobs_hard(tvts = [0.7,0.15,0.15]):
+def get_blobs_hard():
   data = blobs(150, [np.array([3, 4]), np.array([5, 6])], [np.array([[0.7, 0.1], [0.1, 0.43]])] * 2).to_numpy()
-  l = data.shape[0]
-
   for i in range(data.shape[0]):
     if data[i,2]==0:
       data[i,2]=-1
 
-  tx = data[0:int(l*tvts[0]),:2]
-  ty = data[0:int(l*tvts[0]),2:].astype(int).flatten()
-  tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1]),:2]
-  tvy = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1]),2:].astype(int).flatten()
-  tex = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2]),:2]
-  tey = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2]),2:].astype(int).flatten()
-  return tx, ty, tvx, tvy, tex, tey
+  train, test = train_test_split(data, train_size=0.75,shuffle=True)
+  tx = train[:,:2]
+  ty = train[:,2]
+  tex = test[:,:2]
+  tey = test[:,2]
 
-def get_spirals(tvts=[0.7,0.15,0.15]):
+  return tx,ty,tex,tey
+
+def get_spirals(shuffle=True):
   data = spirals(n=1000, cycles=2, sd=0.05).to_numpy()
-  print(data.shape)
-  l = data.shape[0]
-
   for i in range(data.shape[0]):
     if data[i,2]==0:
       data[i,2]=-1
 
-  tx = data[0:int(l*tvts[0]),:2]
-  ty = data[0:int(l*tvts[0]),2:].astype(int).flatten()
-  tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1]),:2]
-  tvy = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1]),2:].astype(int).flatten()
-  tex = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2]),:2]
-  tey = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2]),2:].astype(int).flatten()
-  return tx, ty, tvx, tvy, tex, tey
+  train, test = train_test_split(data, train_size=0.75,shuffle=shuffle)
+  tx = train[:,:2]
+  ty = train[:,2]
+  tex = test[:,:2]
+  tey = test[:,2]
 
-def get_adult(tvts=[0.7,0.15,0.15]):
+  return tx,ty,tex,tey
+
+def get_adult(size=1000):
   df = pd.read_csv("adult_data.csv")
   df=df.sample(frac=1)
   df["income"] = pd.Categorical(df["income"]).codes
@@ -87,7 +78,7 @@ def get_adult(tvts=[0.7,0.15,0.15]):
   tey = y[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])].astype(int).flatten()
   return tx, ty, tvx, tvy, tex, tey
 
-def get_MNIST():
+def get_MNIST(size=1000):
   from tensorflow import keras
   TRAIN_LEN = 10000
   TEST_LEN  = 2000
@@ -171,10 +162,10 @@ def get_flowers(tvts=[0.7,0.15,0.15]):
 
 
 filename = "svmBlob"
-tx, ty, tvx, tvy, tex, tey = get_spirals()
+tx, ty, tex, tey = get_spirals()
 deeta = pd.DataFrame()
 
-tester = svm(C=5,tol=0.05,kernel="rbf", max_pases=50, time_cutoff = 60, gamma=3)
+tester = svm(C=5,tol=0.05,kernel="polynomial", max_pases=100, time_cutoff = 120, gamma=2, degree=7)
 tester.fit(tx,ty)
 tester.printSelf()
 
@@ -200,21 +191,20 @@ if len(neg>0):
   plt.scatter(neg[:,0], neg[:,1], s=80, c="red", marker='s')
 
 
-plt.scatter(tx[:,0], tx[:,1])
-plt.scatter(tx[:,0], tx[:,1])
-
-plt.scatter(tvx[:,0], tvx[:,1], c="yellow")
-plt.scatter(tvx[:,0], tvx[:,1], c="yellow")
+plt.scatter(tx[:,0], tx[:,1],c="yellow")
 
 plt.scatter(tex[:,0], tex[:,1], c="blue")
-plt.scatter(tex[:,0], tex[:,1], c="blue")
+plt.title("Kernel: polynomial, C=5, Tolerance 0.05, Degree: 7")
+
 plt.show()
 
 
 
 
-def get_accuracy(deeta):
 
+def get_accuracy(deeta):
+  tester = svm(C=5,tol=0.05,kernel="rbf", max_pases=50, time_cutoff = 60, gamma=3)
+  tester.fit(tx,ty)
   new_row = dict()
   #new_row["VM1 Train"] = tv1
   #new_row["VM2 Train"] = tv2

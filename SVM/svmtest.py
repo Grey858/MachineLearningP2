@@ -39,7 +39,14 @@ x2 = np.array([
 x=x2
 y=np.array([2,2,2,2,2,  3,3,3,3,3, 4,4,4,4,4])
 
-tester = multiple_svm(C=1,tol=0.1,kernel="polynomial", max_pases=50,num_classes=3, gamma=2, r=0.85, degree=4)
+C=1
+tol=0.1
+kernel = "polynomial"
+gamma = 0.1
+r=1
+degree = 5
+
+tester = multiple_svm(C=C,tol=tol,kernel=kernel, max_pases=100,num_classes=3, gamma=gamma, r=r, degree=degree)
 tester.fit(x,y)
 #xv,bv = tester.printSelf()
 #tester.predict(np.array([4,4]))
@@ -90,5 +97,7 @@ if len(b > 0):
 plt.scatter(x[:5,0], x[:5,1], s=90)
 plt.scatter(x[5:10,0], x[5:10,1], s=90)
 plt.scatter(x[10:,0], x[10:,1], s=90)
+
+plt.title(f"Kernel: {kernel}, C: {C}, Tol: {tol}, Gamma: {gamma}, R: {0.85}")
 
 plt.show()
