@@ -1,17 +1,24 @@
-from threading import stack_size
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 #from sklearn.tree import DecisionTreeClassifier
-from DecisionTree import dtree
 from dataset import blobs
 from dataset import spirals
-from sklearn.tree import DecisionTreeClassifier as DTC
 import math
 import time
+from SMO import svm
 
 def get_blobs(tvts = [0.7,0.15,0.15]):
   data = blobs(200, [np.array([1, 2]), np.array([5, 6])], [np.array([[0.25, 0], [0, 0.25]])] * 2).to_numpy()
   l = data.shape[0]
+
+  for i in range(data.shape[0]):
+    if data[i,2]==0:
+      data[i,2]=-1
+
+  #print(data[:,2])
+  #input()
+
   tx = data[0:int(l*tvts[0]),:2]
   ty = data[0:int(l*tvts[0]),2:].astype(int).flatten()
   tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1]),:2]
@@ -23,6 +30,11 @@ def get_blobs(tvts = [0.7,0.15,0.15]):
 def get_blobs_hard(tvts = [0.7,0.15,0.15]):
   data = blobs(150, [np.array([3, 4]), np.array([5, 6])], [np.array([[0.7, 0.1], [0.1, 0.43]])] * 2).to_numpy()
   l = data.shape[0]
+
+  for i in range(data.shape[0]):
+    if data[i,2]==0:
+      data[i,2]=-1
+
   tx = data[0:int(l*tvts[0]),:2]
   ty = data[0:int(l*tvts[0]),2:].astype(int).flatten()
   tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1]),:2]
@@ -35,6 +47,11 @@ def get_spirals(tvts=[0.7,0.15,0.15]):
   data = spirals(n=1000, cycles=2, sd=0.05).to_numpy()
   print(data.shape)
   l = data.shape[0]
+
+  for i in range(data.shape[0]):
+    if data[i,2]==0:
+      data[i,2]=-1
+
   tx = data[0:int(l*tvts[0]),:2]
   ty = data[0:int(l*tvts[0]),2:].astype(int).flatten()
   tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1]),:2]
@@ -152,178 +169,54 @@ def get_flowers(tvts=[0.7,0.15,0.15]):
   return tx, ty, tvx, tvy, tex, tey
 
 
-bag=[True,False]
-methods=["missclassification","entropy", "gini"]
-data_sizes=[40,20,10,2]
-min_infos=[0.05]
-num_trees=[50,100,150]
-filename = "spiral"
+filename = "svmBlob"
 tx, ty, tvx, tvy, tex, tey = get_spirals()
-fp=list()
-num_fet = math.log(tx.shape[1]+1, 2)
-n=2
-while(n<num_fet):
-  fp.append(n/tx.shape[1]+0.001)
-  n*=2
-fp.append(num_fet/tx.shape[1]+0.001)
-fp.append(0.15)
-fp.append(0.3)
-
-print(num_fet)
-fp=[0.6,-1]
-#input()
-#mytree = dtree(method="missclassification", min_data_size=20, min_info=0.05, depth_cutoff=5)
-#mytree.fit(tx, ty)
-#print(mytree.score(tx,ty))
-#input("Real code time?")
-
-import ML_Democracy as MLD
-
 deeta = pd.DataFrame()
 
 
-def get_accuracy(f, b, m, ds, minf, numt, deeta):
-  def dtree_init(x_train, y_train, x_test, y_test):
-    #ftime=0
-    #tetime=0
-    #trtime=0 
-    
-    #st=time.time()
-    dt = dtree(method=m, min_data_size=ds, min_info=minf)
-    dt.fit(x_train, y_train)
-    #ftime=time.time()-st
-    #st=time.time()
-    test_score = dt.score(x=x_test, y=y_test)
-    #tetime=time.time()-st
-    #st=time.time()
-    train_score = dt.score(x=x_train, y=y_train)
-    #trtime=time.time()-st
+tester = svm(C=1,tol=0.5,kernel="polynomial", max_pases=50, time_cutoff = 15)
+tester.fit(tx,ty)
+tester.printSelf()
+plt.scatter(tx[:,0], tx[:,1])
+plt.scatter(tx[:,0], tx[:,1])
 
-    #print(f"fit time: {ftime}, train time: {tetime}, test time, {trtime}")
+plt.scatter(tvx[:,0], tvx[:,1], c="yellow")
+plt.scatter(tvx[:,0], tvx[:,1], c="yellow")
 
-    return train_score, test_score, dt
-  def predict(model, x):
-    #st=time.time()
-    temp = model.predict(x)
-    #print(f"pred time: {time.time()-st}")
-    return temp
+plt.scatter(tex[:,0], tex[:,1], c="blue")
+plt.scatter(tex[:,0], tex[:,1], c="blue")
 
-  def sktree_init(x_train, y_train, x_test, y_test):
-    dt = DTC().fit(x_train,y_train)
-    test_score = dt.score(x_test, y_test)
-    train_score = dt.score(x_train, y_train)
-    return train_score, test_score, dt
-  MLD.set_num_classifications(4)
-  # arguments are: x_train, x_test, y_train, y_test
-  MLD.set_default_data(tx, tvx, ty, tvy)
-  MLD.add_algo(MLD.ML_Algo(sktree_init, predict, "dtree"),numt)
-  MLD.train_algos(featureProportion=f, bag=b) # add nullable args for funnel or not
-  MLD.current_algos()
-  print(f"time taken total: {MLD.train_time()}")
-  t = MLD.train_time()
-  v1 = MLD.validate_voting(tex, tey, method=0) # change this back to validate, when training set function to vote or not
-  v2 = MLD.validate_voting(tex, tey, method=1) # change this back to validate, when training set function to vote or not
-  v3 = MLD.validate_voting(tex, tey, method=2) # change this back to validate, when training set function to vote or not
-  
-  #tv1 = MLD.validate_voting(tx, ty, method=0) # change this back to validate, when training set function to vote or not
-  #tv2 = MLD.validate_voting(tx, ty, method=1) # change this back to validate, when training set function to vote or not
-  #tv3 = MLD.validate_voting(tx, ty, method=2)
-  MLD.remove_all_algos()
+xrange = np.linspace(-2,2,20)
+yrange = np.linspace(-2,2,20)
+pos = list()
+neg = list()
+for xs in xrange:
+  for ys in yrange:
+    res = tester.predict(np.array([xs,ys]))
+    #print(f"Result of prediction: {res}")
+    if res > 0:
+      pos.append(np.array([xs,ys]))
+    else:
+      neg.append(np.array([xs,ys]))
+pos = np.array(pos)
+neg = np.array(neg)
+plt.scatter(pos[:,0], pos[:,1], s=4 ,c="green", )
+plt.scatter(neg[:,0], neg[:,1], s=4, c="red")
+plt.show()
+
+
+
+
+def get_accuracy(deeta):
 
   new_row = dict()
-  new_row["Feature_Prop"] = f
-  new_row["Bagging"] = b
-  new_row["Gain Metric"] = m
-  new_row["Min Data Size"] = ds
-  new_row["Min Info"] = minf
-  new_row["Num Trees"] = numt
   #new_row["VM1 Train"] = tv1
   #new_row["VM2 Train"] = tv2
   #new_row["VM3 Train"] = tv2
-  new_row["VM1 Test"] = v1
-  new_row["VM2 Test"] = v2
-  new_row["VM3 Test"] = v3
-  new_row["Train Time"] = t
+  new_row["VM1 Test"] = 0
+  new_row["VM2 Test"] = 1
+  new_row["VM3 Test"] = 2
+  new_row["Train Time"] = 3
   deeta=deeta.append(new_row, ignore_index=True)
 
-  #print(deeta.head())
-  return (v1+v2+v3)/3, deeta
 
-bestScore = 0
-bestParams = list()
-bf = fp[0]
-for i,f in enumerate(fp):
-  temp, deeta = get_accuracy(f, bag[0], methods[0], data_sizes[0], min_infos[0], num_trees[0], deeta)
-  if temp>bestScore:
-    bf=f
-    bestScore = temp
-    bestParams = [f, bag[0], methods[0], data_sizes[0], min_infos[0], num_trees[0]]
-deeta.to_csv(filename+"_results.csv")  
-print(f"Best score: {bestScore} with params {bestParams}")
-print(bestParams)
-
-bb=bag[0]
-for i,b in enumerate(bag):
-  temp, deeta = get_accuracy(bf, b, methods[0], data_sizes[0], min_infos[0], num_trees[0], deeta)
-  if temp>bestScore:
-    print(f"Bag beat previous best {bag}")
-    bb=b
-    bestScore = temp
-    bestParams = [bf, bb, methods[0], data_sizes[0], min_infos[0], num_trees[0]]
-print(f"bb: {bb}")
-deeta.to_csv(filename+"_results.csv")  
-print(f"Best score: {bestScore} with params {bestParams}")
-print(bestParams)
-
-bm=methods[0]
-for i,m in enumerate(methods):
-  temp, deeta = get_accuracy(bf, bb, m, data_sizes[0], min_infos[0], num_trees[0], deeta)
-  
-  print("___________________________________________________")
-  print(f"temp {temp}, bestScore {bestScore}")
-  print(f"m {m}")
-  if temp>bestScore:
-    print(f"Chose m: {m}")
-    bm=m
-    bestScore = temp
-    bestParams = [bf, bb, bm, data_sizes[0], min_infos[0], num_trees[0]]
-  print("___________________________________________________")
-bds=data_sizes[0]
-deeta.to_csv(filename+"_results.csv")  
-print(f"Best score: {bestScore} with params {bestParams}")
-print(bestParams)
-
-
-for i,ds in enumerate(data_sizes):
-  temp, deeta = get_accuracy(bf, bb, bm, ds, min_infos[0], num_trees[0], deeta)
-  if temp>bestScore:
-    bds=ds
-    bestScore = temp
-    bestParams = [bf, bb, bm, bds, min_infos[0], num_trees[0]]
-deeta.to_csv(filename+"_results.csv")  
-print(f"Best score: {bestScore} with params {bestParams}")
-print(bestParams)
-
-bminf = min_infos[0]
-for i,minf in enumerate(min_infos):
-  temp, deeta = get_accuracy(bf, bb, bm, bds, minf, num_trees[0], deeta)
-  if temp>bestScore:
-    bminf=minf
-    bestScore = temp
-    bestParams = [bf, bb, bm, bds, bminf, num_trees[0]]
-deeta.to_csv(filename+"_results.csv")  
-print(f"Best score: {bestScore} with params {bestParams}")
-print(bestParams)
-
-bnumt=num_trees[0]
-for i,numt in enumerate(num_trees):
-  temp, deeta = get_accuracy(bf, bb, bm, bds, bminf, numt, deeta)
-  if temp>bestScore:
-    bnumt=numt
-    bestScore = temp
-    bestParams = [bf, bb, bm, bds, bminf, bnumt]
-print(f"Best score: {bestScore} with params {bestParams}")
-print(bestParams)
-
-deeta.to_csv(filename+"_results.csv")            
-            

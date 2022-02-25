@@ -2,6 +2,7 @@ from random import randint
 import pandas as pd
 import numpy as np
 import math
+import time
 
 
 class svm:
@@ -75,34 +76,48 @@ class svm:
         temp+=self.x[i]*self.a[i]*self.y[i]
     print(f"coefs: {temp} + {self.b}")
     return temp,self.b
+  
   def dot(self,v1, v2):
     return np.dot(v1,v2)
-  def gausian(self,v1,v2):
-    return 1
-  def polynomial(self,v1,v2,degree):
-    return math.pow(np.dot(v1,v2)+1,degree)
+  def rbf(self,v1, v2):
+    temp = np.sum(np.power((v1-v2),2))
+    return math.exp(-self.gamma*temp)
+  def sigmoid(self,v1,v2):
+    temp = np.dot(v1,v2)
+    return math.tanh(self.gamma * temp + self.r)
+  def polynomial(self,v1,v2):
+    return math.pow(np.dot(v1,v2)+self.r,self.degree)
 
-  def __init__(self, C=2, tol=0.98, max_pases=10, kernel="dot"):
+  def __init__(self, C=2, tol=0.95, max_pases=100, kernel="dot", degree=2, r=1, gamma=0.05, time_cutoff=1000):
     print("initializing svm")
     self.C = C
     self.tol = tol
     self.max_passes = max_pases
+    self.degree = degree
+    self.r = r
+    self.gamma = gamma
+    self.time_cutoff=time_cutoff
 
     if kernel == "dot":
       self.kernel = self.dot
-    elif kernel == "Gausian": #Not yet implemented
-      self.kernel = self.gausian
+    elif kernel == "rbf": #Not yet implemented
+      self.kernel = self.rbf
     elif kernel == "polynomial":
       self.kernel = self.polynomial
-  
+    elif kernel == "sigmoid":
+      self.kernel = self.sigmoid
+    else:
+      raise Exception(f"{kernel} is Not a valid kernel")
+   
   def fit(self, x, y):
     self.x=x
     self.y=y
     self.a = np.zeros(x.shape[0])
     self.b = 0
     passes=0
+    start = time.time()
 
-    while passes<self.max_passes:
+    while passes<self.max_passes and time.time()<start+self.time_cutoff:
       num_changed_alphas=0
       for i in range(x.shape[0]):
         Ei = self.getfx(x[i]) - y[i]
@@ -135,4 +150,8 @@ class svm:
         passes=passes+1
       else:
         passes=0
-    
+
+
+
+
+#class multiple_svm:
