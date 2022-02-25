@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from DecisionTree import dtree
 #from sklearn.tree import DecisionTreeClassifier
 from dataset import blobs
 from dataset import spirals
@@ -173,21 +174,13 @@ filename = "svmBlob"
 tx, ty, tvx, tvy, tex, tey = get_spirals()
 deeta = pd.DataFrame()
 
-
-tester = svm(C=1,tol=0.5,kernel="polynomial", max_pases=50, time_cutoff = 15)
+tester = svm(C=5,tol=0.05,kernel="rbf", max_pases=50, time_cutoff = 60, gamma=3)
 tester.fit(tx,ty)
 tester.printSelf()
-plt.scatter(tx[:,0], tx[:,1])
-plt.scatter(tx[:,0], tx[:,1])
 
-plt.scatter(tvx[:,0], tvx[:,1], c="yellow")
-plt.scatter(tvx[:,0], tvx[:,1], c="yellow")
 
-plt.scatter(tex[:,0], tex[:,1], c="blue")
-plt.scatter(tex[:,0], tex[:,1], c="blue")
-
-xrange = np.linspace(-2,2,20)
-yrange = np.linspace(-2,2,20)
+xrange = np.linspace(-2,2,40)
+yrange = np.linspace(-2,2,40)
 pos = list()
 neg = list()
 for xs in xrange:
@@ -200,8 +193,21 @@ for xs in xrange:
       neg.append(np.array([xs,ys]))
 pos = np.array(pos)
 neg = np.array(neg)
-plt.scatter(pos[:,0], pos[:,1], s=4 ,c="green", )
-plt.scatter(neg[:,0], neg[:,1], s=4, c="red")
+
+if len(pos>0):
+  plt.scatter(pos[:,0], pos[:,1], s=80 ,c="green", marker='s')
+if len(neg>0):
+  plt.scatter(neg[:,0], neg[:,1], s=80, c="red", marker='s')
+
+
+plt.scatter(tx[:,0], tx[:,1])
+plt.scatter(tx[:,0], tx[:,1])
+
+plt.scatter(tvx[:,0], tvx[:,1], c="yellow")
+plt.scatter(tvx[:,0], tvx[:,1], c="yellow")
+
+plt.scatter(tex[:,0], tex[:,1], c="blue")
+plt.scatter(tex[:,0], tex[:,1], c="blue")
 plt.show()
 
 

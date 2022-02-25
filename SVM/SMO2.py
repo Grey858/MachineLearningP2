@@ -54,10 +54,9 @@ class svm:
       temp=(b1+b2)/2.0
     return temp
 
-  def predict(self,x, verbose=False):
+  def predict(self,x):
     temp = self.getfx(x)
-    if verbose:
-      print(f"Fx: {temp}")
+    print(f"Fx: {temp}")
     if(temp>0):
       return 1
     elif(temp<=0):
@@ -118,77 +117,44 @@ class svm:
     passes = 0
     start = time.time()
 
-    while passes<self.max_passes and time.time()<start+self.time_cutoff:
+    num_changed_alphas=0
+    examineAll=1
+
+    while num_changed_alphas>0 or examineAll==1:#passes<self.max_passes and time.time()<start+self.time_cutoff:
       num_changed_alphas=0
-      for i in range(x.shape[0]):
-        Ei = self.getfx(x[i]) - y[i]
-
-        if (y[i]*Ei < -self.tol and self.a[i] < self.C) or (y[i]*Ei>self.tol and self.a[i]>0):
-          j = self.select_j(i,y.shape[0])
-          Ej = self.getfx(x[j]) - y[j]
-          oldai = self.a[i]
-          oldaj = self.a[j]
-
-          L,H = self.get_bounds(y[i],y[j],self.a[i],self.a[j],self.C)
-
-          if L==H:
-            continue
-          n = 2*self.kernel(x[i],x[j])-self.kernel(x[i],x[i])-self.kernel(x[j],x[j])
-          if n>=0:
-            continue
-          newaj = oldaj-( y[j] * ( Ei-Ej ) ) / n
-          newaj = self.clip(newaj,H,L)
-          if abs(newaj-oldaj)<0.00001:
-            continue
-          newai = oldai + y[i]*y[j]*(oldaj-newaj)
-          b = self.get_b(self.b,  Ei,Ej,  y[i],y[j],  newai,oldai, newaj,oldaj, x[i],x[j], self.kernel, self.C)
-          num_changed_alphas += 1
-          self.b=b
-          self.a[i]=newai
-          self.a[j]=newaj
+      
 
       if(num_changed_alphas == 0):
         passes=passes+1
       else:
         passes=0
 
+  def examineExample(self, i):
+    Ei = self.getfx(self.x[i]) - self.y[i]
+
+    if (self.y[i]*Ei < -self.tol and self.a[i] < self.C) or (self.y[i]*Ei>self.tol and self.a[i]>0):
+      j = self.select_j(i,self.y.shape[0])
+      Ej = self.getfx(self.x[j]) - self.y[j]
+      oldai = self.a[i]
+      oldaj = self.a[j]
+
+      L,H = self.get_bounds(self.y[i],self.y[j],self.a[i],self.a[j],self.C)
+
+      if L==H:
+        return 0
+      n = 2*self.kernel(self.x[i],self.x[j])-self.kernel(self.x[i],self.x[i])-self.kernel(self.x[j],self.x[j])
+      if n>=0:
+        return 0
+      newaj = oldaj-( self.y[j] * ( Ei-Ej ) ) / n
+      newaj = self.clip(newaj,H,L)
+      if abs(newaj-oldaj)<0.00001:
+        return 0
+      newai = oldai + self.y[i]*self.y[j]*(oldaj-newaj)
+      b = self.get_b(self.b,  Ei,Ej,  self.y[i],self.y[j],  newai,oldai, newaj,oldaj, self.x[i],self.x[j], self.kernel, self.C)
+      num_changed_alphas += 1
+      self.b=b
+      self.a[i]=newai
+      self.a[j]=newaj
 
 
-
-class multiple_svm:
-  def __init__(self, C=2, tol=0.01, max_pases=50, kernel="dot", degree=2, r=1, gamma=0.05, time_cutoff=1000, num_classes=3):
-    print("initializing multivariate svm")
-    svms = list()
-    for i in range(num_classes):
-      svms.append(svm(C,tol,max_pases,kernel,degree,r,gamma,time_cutoff/num_classes))
-    self.num_classes=num_classes
-    self.svms = svms
-  
-  def fit(self, x, y):
-    ys = list()
-    yl = np.unique(y)
-    self.labelmap=yl
-    for i in range(self.num_classes):
-      tempy = np.copy(y)
-      for j in range(y.shape[0]):
-        if tempy[j] == yl[i]:
-          tempy[j]=1
-        else:
-          tempy[j]=-1
-      ys.append(tempy)
-      self.svms[i].fit(x,tempy)
-  
-  def predict(self,x):
-    bestfx=-200000
-    bestlab=-1
-    for i in range(len(self.svms)):
-      tempfx = self.svms[i].getfx(x)
-      if tempfx>bestfx:
-        bestfx = tempfx
-        bestlab = self.labelmap[i]
-    print(f"Best fx {bestfx}, bestlab {bestlab}")
-    return bestlab
-
-
-
-
+#class multiple_svm:
