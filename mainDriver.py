@@ -5,8 +5,7 @@ import numpy as np
 from DecisionTree import dtree
 from dataset import blobs
 from dataset import spirals
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier as DTC
 import math
 import time
 
@@ -158,8 +157,8 @@ methods=["missclassification","entropy", "gini"]
 data_sizes=[40,20,10,2]
 min_infos=[0.05]
 num_trees=[50,100,150]
-filename = "adult"
-tx, ty, tvx, tvy, tex, tey = get_adult()
+filename = "spiral"
+tx, ty, tvx, tvy, tex, tey = get_spirals()
 fp=list()
 num_fet = math.log(tx.shape[1]+1, 2)
 n=2
@@ -171,8 +170,8 @@ fp.append(0.15)
 fp.append(0.3)
 
 print(num_fet)
-print(fp)
-input()
+fp=[0.6,-1]
+#input()
 #mytree = dtree(method="missclassification", min_data_size=20, min_info=0.05, depth_cutoff=5)
 #mytree.fit(tx, ty)
 #print(mytree.score(tx,ty))
@@ -209,10 +208,15 @@ def get_accuracy(f, b, m, ds, minf, numt, deeta):
     #print(f"pred time: {time.time()-st}")
     return temp
 
+  def sktree_init(x_train, y_train, x_test, y_test):
+    dt = DTC().fit(x_train,y_train)
+    test_score = dt.score(x_test, y_test)
+    train_score = dt.score(x_train, y_train)
+    return train_score, test_score, dt
   MLD.set_num_classifications(4)
   # arguments are: x_train, x_test, y_train, y_test
   MLD.set_default_data(tx, tvx, ty, tvy)
-  MLD.add_algo(MLD.ML_Algo(dtree_init, predict, "dtree"),numt)
+  MLD.add_algo(MLD.ML_Algo(sktree_init, predict, "dtree"),numt)
   MLD.train_algos(featureProportion=f, bag=b) # add nullable args for funnel or not
   MLD.current_algos()
   print(f"time taken total: {MLD.train_time()}")
