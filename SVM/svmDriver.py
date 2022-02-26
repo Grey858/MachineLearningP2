@@ -244,15 +244,15 @@ def get_accuracy(deeta, x, y, C, kernel, max_passes, time_cutoff, gamma, degree,
   deeta.to_csv(filename+"_temp.csv") 
   return np.mean(accuracies), deeta
 
-C=[3]
-max_pases=[200]
+C=[1,2,3,4,5]
+max_pases=[50,100,200]
 
-kernel=["polynomial", "dot"] 
-gamma=[1,2]
-degree=[3] 
+kernel=["rbf","polynomial", "dot"] 
+gamma=[1,2,3,4]
+degree=[2,3,4] 
 r=[1,0.85,1.15]
 
-time_cutoff = [60*20] 
+time_cutoff = [30,60,120,60*20] 
 
 
 bestScore = 0
