@@ -359,7 +359,7 @@ class dtree(object):
       predictions.append(self.root.classify(i))
     return np.array(predictions)
   def fit(self, x, y):
-    #print(f"starting fit x shape: {x.shape}")
+    print(f"starting fit x shape: {x.shape}, method: {self.split_method}")
     x2 = np.sort(x, 0)
     self.root = self.treenode(data=x, sortedData=x2, labels=y, parent=self, categories=list(np.arange(0,x.shape[1],1,int)))
     self.root.set_split()

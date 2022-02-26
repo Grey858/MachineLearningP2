@@ -147,6 +147,7 @@ def train_algos(output=False, featureProportion=-1.0, bag=False):
         print(f"{i.name}, train: {i.train_score}, test: {i.test_score}, time: {i.train_time}")
   #print(f"ind time: {indTime}, bagtime: {bagTime}, traintime: {trainTime}")
 def __vote__(datapoint, method):
+  print("voting")
   class_votes = np.zeros((__num_classifications__, len(datapoint)), dtype='float32')
   abs_class_votes = np.zeros(len(datapoint), dtype='float32')
   for i in __algos__:
@@ -168,6 +169,7 @@ def __vote__(datapoint, method):
       abs_class_votes[j] += abs(weight)
   #print(f'class vote shape: {class_votes.shape}')
   #print(f'class votes: {class_votes[:,0]}')
+  print("assembled predictions")
   for i in range(len(datapoint)):
     if abs_class_votes[i]!=0:
       class_votes[:,i]/=abs_class_votes[i]
@@ -178,6 +180,8 @@ def __vote__(datapoint, method):
   #print(f"class votes: {class_votes}")
   if(len(datapoint)==1):
     return class_votes[0]
+  
+  print("Summed class votes")
   return class_votes
 
 def predict_one(x, method):
@@ -200,8 +204,10 @@ def predict_no_vote(x):
 def validate_voting(x, y, method=1):
   print(f"Validating voting ensemble method: {method}")
   num_right = 0
+  print("Getting predictions")
   predictions = predict(x, method)
   #print(f'shape of x: {x.shape}, len x: {len(x)}')
+  print("scoring predictions")
   for i in range(len(y)):
     #print(f'y actual: {y[i]}')
     if(predictions[i] == y[i]):

@@ -46,21 +46,21 @@ def get_spirals(tvts=[0.7,0.15,0.15]):
 
 def get_adult(tvts=[0.7,0.15,0.15]):
   df = pd.read_csv("adult_data.csv")
+  df=df.sample(frac=1)
   df["income"] = pd.Categorical(df["income"]).codes
   y = df["income"].to_numpy().flatten()
   df = df.drop(["income"], axis=1)
   cats = ["workclass","education","marital-status","occupation","relationship","race","sex","native-country"]
   
-  df = dtree.integer_mapping(None,df,cats)
-  print(df.head())
-  #df = dtree.make_dummies(None, df, cats)
+  #df = dtree.integer_mapping(None,df,cats)
+  #print(df.head())
+  df = dtree.make_dummies(None, df, cats)
   
-  data = df.to_numpy()
+  data = df.to_numpy()[:10000,:]
   #data = StandardScaler().fit_transform(data)
   #data=PCA(n_components=0.9).fit_transform(data)
-  print(data.shape)
-  print(data.shape)
-  #y=y[0:1000]
+
+  y=y[0:10000]
   l = data.shape[0]
   tx = data[0:int(l*tvts[0])]
   ty = y[0:int(l*tvts[0])].astype(int).flatten()
@@ -72,8 +72,8 @@ def get_adult(tvts=[0.7,0.15,0.15]):
 
 def get_MNIST():
   from tensorflow import keras
-  TRAIN_LEN = 30000
-  TEST_LEN  = 2500
+  TRAIN_LEN = 10000
+  TEST_LEN  = 2000
 
   # Data to test with
   (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -83,6 +83,7 @@ def get_MNIST():
 
   #pc = PCA(n_components=0.9)
   x_train = np.reshape(x_train, (60000, 28*28))
+  x_test = np.reshape(x_test, (10000, 28*28))
   #print(x_train.shape)
   #x_train = pc.fit_transform(x_train)
   #print(x_train.shape)
@@ -98,13 +99,66 @@ def get_MNIST():
   y_test = y_test[:int(TEST_LEN/2)]
   return x_train, y_train, x_val, y_val, x_test, y_test
 
+def get_cars(tvts=[0.7,0.15,0.15]):
+  cols=["buy","maint","doors","persons","lug","safety","acc"]
+  buy_dict = {"vhigh":4, "high":3, "med":2, "low":1}
+  maint_dict = {"vhigh":4, "high":3, "med":2, "low":1}
+  doors_dict = {"2":2, "3":3, "4":4, "5more":5}
+  persons_dict = {"2":2, "4":4, "more":5}
+  lug_boot_dict = {"small":1, "med":2, "big":3}
+  safety_dict =  {"low":1, "med":2, "high":3}
+  acc_dict={"unacc":0,"acc":1,"good":2,"vgood":3}
+  mdict={"buy":buy_dict,"maint":maint_dict,"doors":doors_dict,"persons":persons_dict,"lug":lug_boot_dict,"safety":safety_dict,"acc":acc_dict}
+
+  df = pd.read_csv("car_data.csv")
+  for i in cols:
+    df[i]=df[i].map(mdict[i])
+  df=df.sample(frac=1)
+  y = df["acc"].to_numpy().flatten()
+  df = df.drop(["acc"], axis=1)
+  #df = dtree.make_dummies(None, df, cats)
+  
+  data = df.to_numpy()
+  #data = StandardScaler().fit_transform(data)
+  #data=PCA(n_components=0.9).fit_transform(data)
+
+  l = data.shape[0]
+  tx = data[0:int(l*tvts[0])]
+  ty = y[0:int(l*tvts[0])].astype(int).flatten()
+  tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])]
+  tvy = y[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])].astype(int).flatten()
+  tex = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])]
+  tey = y[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])].astype(int).flatten()
+  return tx, ty, tvx, tvy, tex, tey
+
+def get_flowers(tvts=[0.7,0.15,0.15]):
+  df = pd.read_csv("iris_data.csv")
+  df = dtree.integer_mapping(None,df,["species"])
+  df=df.sample(frac=1)
+  y = df["species"].to_numpy().flatten()
+  df = df.drop(["species"], axis=1)
+  #df = dtree.make_dummies(None, df, cats)
+  
+  data = df.to_numpy()
+  #data = StandardScaler().fit_transform(data)
+  #data=PCA(n_components=0.9).fit_transform(data)
+
+  l = data.shape[0]
+  tx = data[0:int(l*tvts[0])]
+  ty = y[0:int(l*tvts[0])].astype(int).flatten()
+  tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])]
+  tvy = y[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])].astype(int).flatten()
+  tex = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])]
+  tey = y[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])].astype(int).flatten()
+  return tx, ty, tvx, tvy, tex, tey
+
 
 bag=[True,False]
-methods=["entropy", "gini", "missclassification"]
-data_sizes=[20,10,2]
+methods=["missclassification","entropy", "gini"]
+data_sizes=[40,20,10,2]
 min_infos=[0.05]
 num_trees=[50,100,150]
-filename = "adult_cat"
+filename = "adult"
 tx, ty, tvx, tvy, tex, tey = get_adult()
 fp=list()
 num_fet = math.log(tx.shape[1]+1, 2)
@@ -113,10 +167,12 @@ while(n<num_fet):
   fp.append(n/tx.shape[1]+0.001)
   n*=2
 fp.append(num_fet/tx.shape[1]+0.001)
+fp.append(0.15)
+fp.append(0.3)
+
 print(num_fet)
 print(fp)
-fp=[0.1,0.3,0.5,-1]
-#fp=[0.6,-1]
+input()
 #mytree = dtree(method="missclassification", min_data_size=20, min_info=0.05, depth_cutoff=5)
 #mytree.fit(tx, ty)
 #print(mytree.score(tx,ty))
@@ -153,12 +209,12 @@ def get_accuracy(f, b, m, ds, minf, numt, deeta):
     #print(f"pred time: {time.time()-st}")
     return temp
 
-  MLD.set_num_classifications(2)
+  MLD.set_num_classifications(4)
   # arguments are: x_train, x_test, y_train, y_test
   MLD.set_default_data(tx, tvx, ty, tvy)
   MLD.add_algo(MLD.ML_Algo(dtree_init, predict, "dtree"),numt)
   MLD.train_algos(featureProportion=f, bag=b) # add nullable args for funnel or not
-  #MLD.current_algos()
+  MLD.current_algos()
   print(f"time taken total: {MLD.train_time()}")
   t = MLD.train_time()
   v1 = MLD.validate_voting(tex, tey, method=0) # change this back to validate, when training set function to vote or not
@@ -183,6 +239,7 @@ def get_accuracy(f, b, m, ds, minf, numt, deeta):
   new_row["VM1 Test"] = v1
   new_row["VM2 Test"] = v2
   new_row["VM3 Test"] = v3
+  new_row["Train Time"] = t
   deeta=deeta.append(new_row, ignore_index=True)
 
   #print(deeta.head())
@@ -228,8 +285,6 @@ for i,m in enumerate(methods):
     bestParams = [bf, bb, bm, data_sizes[0], min_infos[0], num_trees[0]]
   print("___________________________________________________")
 bds=data_sizes[0]
-
-
 deeta.to_csv(filename+"_results.csv")  
 print(f"Best score: {bestScore} with params {bestParams}")
 print(bestParams)
@@ -241,7 +296,6 @@ for i,ds in enumerate(data_sizes):
     bds=ds
     bestScore = temp
     bestParams = [bf, bb, bm, bds, min_infos[0], num_trees[0]]
-
 deeta.to_csv(filename+"_results.csv")  
 print(f"Best score: {bestScore} with params {bestParams}")
 print(bestParams)
@@ -253,8 +307,6 @@ for i,minf in enumerate(min_infos):
     bminf=minf
     bestScore = temp
     bestParams = [bf, bb, bm, bds, bminf, num_trees[0]]
-
-
 deeta.to_csv(filename+"_results.csv")  
 print(f"Best score: {bestScore} with params {bestParams}")
 print(bestParams)
@@ -266,7 +318,6 @@ for i,numt in enumerate(num_trees):
     bnumt=numt
     bestScore = temp
     bestParams = [bf, bb, bm, bds, bminf, bnumt]
-
 print(f"Best score: {bestScore} with params {bestParams}")
 print(bestParams)
 
