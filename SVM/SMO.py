@@ -166,15 +166,21 @@ class multiple_svm:
   
   def fit(self, x, y):
     ys = list()
+    self.ys = ys
     yl = np.unique(y)
+    print(yl)
     self.labelmap=yl
     for i in range(self.num_classes):
       tempy = np.copy(y)
+      #print(tempy[0:10])
       for j in range(y.shape[0]):
         if tempy[j] == yl[i]:
+          #print(f"j: {j}, temp[j]: {tempy[j]}, yl[i]: {yl[i]}")
           tempy[j]=1
         else:
+          #print(f"no j: {j}, temp[j]: {tempy[j]}, yl[i]: {yl[i]}")
           tempy[j]=-1
+      #print(tempy[0:10])
       ys.append(tempy)
       self.svms[i].fit(x,tempy)
   

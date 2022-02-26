@@ -8,7 +8,9 @@ from dataset import spirals
 import math
 import time
 from SMO import svm
+from SMO import multiple_svm
 from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
 
 def get_blobs():
   data = blobs(200, [np.array([1, 2]), np.array([5, 6])], [np.array([[0.25, 0], [0, 0.25]])] * 2).to_numpy()
@@ -56,21 +58,23 @@ def get_adult(size=1000):
   df = pd.read_csv("adult_data.csv")
   df=df.sample(frac=1)
   df["income"] = pd.Categorical(df["income"]).codes
-  y = df["income"].to_numpy().flatten()
+  y = df["income"].to_numpy().flatten()[:size]
 
-  for i in range(y.shape[0]):
-    if y[i]==0:
-      data[i]=-1
-    else:
-      y[i]=1
-
-  print(y[0:10])
+  
 
   df = df.drop(["income"], axis=1)
   cats = ["workclass","education","marital-status","occupation","relationship","race","sex","native-country"]
   
   df = dtree.make_dummies(None, df, cats)
   data = df.to_numpy()[:size,:]
+
+  for i in range(y.shape[0]):
+    if y[i]==0:
+      y[i]=-1
+    else:
+      y[i]=1
+
+  print(y[0:10])
   tx = data[:int(3*size/4),:]
   tex = data[int(3*size/4):,:]
   ty = y[:int(3*size/4)]
@@ -81,7 +85,7 @@ def get_adult(size=1000):
 def get_MNIST(size=1000):
   from tensorflow import keras
   TRAIN_LEN = size
-  TEST_LEN  = size/6
+  TEST_LEN  = int(size/6)
 
   # Data to test with
   (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -89,20 +93,21 @@ def get_MNIST(size=1000):
   x_train = x_train.astype("float32") / 255
   x_test = x_test.astype("float32") / 255
 
-  #pc = PCA(n_components=0.9)
+  pc = PCA(n_components=0.9)
   x_train = np.reshape(x_train, (60000, 28*28))
   x_test = np.reshape(x_test, (10000, 28*28))
-  #print(x_train.shape)
-  #x_train = pc.fit_transform(x_train)
-  #print(x_train.shape)
-  #x_test = pc.transform(np.reshape(x_test, (10000, 28*28)))
+  print(x_test.shape)
+  x_train = pc.fit_transform(x_train)
+  print(x_train.shape)
+  print(x_train[0])
+  x_test = pc.transform(np.reshape(x_test, (10000, 28*28)))
 
   print(f'original shape upon import, x: {x_train.shape}, y: {y_train.shape}')
 
   x_train = x_train[:TRAIN_LEN]
-  y_train = y_train[:TRAIN_LEN]
+  y_train = y_train[:TRAIN_LEN].astype(int)
   x_test = x_test[:TEST_LEN]
-  y_test = y_test[:TEST_LEN]
+  y_test = y_test[:TEST_LEN].astype(int)
 
   return x_train, y_train, x_test, y_test
 
@@ -157,8 +162,8 @@ def get_flowers():
   return tx, ty, tex, tey
 
 
-filename = "svm_spiral"
-tx, ty, tex, tey = get_spirals()
+filename = "svm_mnist"
+tx, ty, tex, tey = get_MNIST()
 deeta = pd.DataFrame()
 
 #tester = svm(C=5,tol=0.05,kernel="polynomial", max_pases=100, time_cutoff = 120, gamma=2, degree=7)
@@ -202,7 +207,7 @@ def get_accuracy(deeta, x, y, C, kernel, max_passes, time_cutoff, gamma, degree,
 
   chunk = int(x.shape[0]/5)
   accuracies = list()
-
+  print(f"Getting accuracy y: {y[0:5]}")
   for i in range(5):
     xte = x[i*chunk:(i+1)*chunk]
     yte = y[i*chunk:(i+1)*chunk]
@@ -210,16 +215,17 @@ def get_accuracy(deeta, x, y, C, kernel, max_passes, time_cutoff, gamma, degree,
     xt = np.concatenate((x[0:i*chunk], x[(i+1)*chunk:]), axis=0)
     yt = np.concatenate((y[0:i*chunk], y[(i+1)*chunk:]), axis=0)
 
-    tester = svm(C=C,tol=0.05,kernel=kernel, max_pases=max_passes, time_cutoff = time_cutoff, gamma=gamma, degree=degree, r=r)
+    tester = multiple_svm(C=C,tol=0.05,kernel=kernel, max_pases=max_passes, time_cutoff = time_cutoff, gamma=gamma, degree=degree, r=r, num_classes=10)
     tester.fit(xt,yt)
 
+    tot=0
     for xi in range(yte.shape[0]):
-      tot=0
       temp = tester.predict(xte[xi])
-      if temp == y[xi]:
+      if temp == yte[xi]:
         tot+=1
     acc = tot/yte.shape[0]
     accuracies.append(acc)
+    print(f"acc {i}: {acc}")
   accuracies = np.array(accuracies)
 
 
@@ -238,15 +244,15 @@ def get_accuracy(deeta, x, y, C, kernel, max_passes, time_cutoff, gamma, degree,
   deeta.to_csv(filename+"_temp.csv") 
   return np.mean(accuracies), deeta
 
-C=[1,3,5]
-max_pases=[50,100]
+C=[3]
+max_pases=[200]
 
-kernel=["rbf", "polynomial", "dot"] 
-gamma=[2,1,3,4]
-degree=[2,3,4] 
+kernel=["polynomial", "dot"] 
+gamma=[1,2]
+degree=[3] 
 r=[1,0.85,1.15]
 
-time_cutoff = [30,60,120] 
+time_cutoff = [60*20] 
 
 
 bestScore = 0
