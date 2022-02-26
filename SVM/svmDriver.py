@@ -57,31 +57,31 @@ def get_adult(size=1000):
   df=df.sample(frac=1)
   df["income"] = pd.Categorical(df["income"]).codes
   y = df["income"].to_numpy().flatten()
+
+  for i in range(y.shape[0]):
+    if y[i]==0:
+      data[i]=-1
+    else:
+      y[i]=1
+
+  print(y[0:10])
+
   df = df.drop(["income"], axis=1)
   cats = ["workclass","education","marital-status","occupation","relationship","race","sex","native-country"]
   
-  #df = dtree.integer_mapping(None,df,cats)
-  #print(df.head())
   df = dtree.make_dummies(None, df, cats)
-  
-  data = df.to_numpy()[:10000,:]
-  #data = StandardScaler().fit_transform(data)
-  #data=PCA(n_components=0.9).fit_transform(data)
+  data = df.to_numpy()[:size,:]
+  tx = data[:int(3*size/4),:]
+  tex = data[int(3*size/4):,:]
+  ty = y[:int(3*size/4)]
+  tey = y[int(3*size/4):]
 
-  y=y[0:10000]
-  l = data.shape[0]
-  tx = data[0:int(l*tvts[0])]
-  ty = y[0:int(l*tvts[0])].astype(int).flatten()
-  tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])]
-  tvy = y[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])].astype(int).flatten()
-  tex = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])]
-  tey = y[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])].astype(int).flatten()
-  return tx, ty, tvx, tvy, tex, tey
+  return tx, ty, tex, tey
 
 def get_MNIST(size=1000):
   from tensorflow import keras
-  TRAIN_LEN = 10000
-  TEST_LEN  = 2000
+  TRAIN_LEN = size
+  TEST_LEN  = size/6
 
   # Data to test with
   (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -100,14 +100,13 @@ def get_MNIST(size=1000):
   print(f'original shape upon import, x: {x_train.shape}, y: {y_train.shape}')
 
   x_train = x_train[:TRAIN_LEN]
-  x_val = x_test[int(TEST_LEN/2):]
-  x_test = x_test[:int(TEST_LEN/2)]
   y_train = y_train[:TRAIN_LEN]
-  y_val = y_test[int(TEST_LEN/2):]
-  y_test = y_test[:int(TEST_LEN/2)]
-  return x_train, y_train, x_val, y_val, x_test, y_test
+  x_test = x_test[:TEST_LEN]
+  y_test = y_test[:TEST_LEN]
 
-def get_cars(tvts=[0.7,0.15,0.15]):
+  return x_train, y_train, x_test, y_test
+
+def get_cars():
   cols=["buy","maint","doors","persons","lug","safety","acc"]
   buy_dict = {"vhigh":4, "high":3, "med":2, "low":1}
   maint_dict = {"vhigh":4, "high":3, "med":2, "low":1}
@@ -129,17 +128,15 @@ def get_cars(tvts=[0.7,0.15,0.15]):
   data = df.to_numpy()
   #data = StandardScaler().fit_transform(data)
   #data=PCA(n_components=0.9).fit_transform(data)
+  t = int(3*data.shape[0]/4)
 
-  l = data.shape[0]
-  tx = data[0:int(l*tvts[0])]
-  ty = y[0:int(l*tvts[0])].astype(int).flatten()
-  tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])]
-  tvy = y[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])].astype(int).flatten()
-  tex = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])]
-  tey = y[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])].astype(int).flatten()
-  return tx, ty, tvx, tvy, tex, tey
+  tx = data[:t]
+  ty = y[:t].astype(int).flatten()
+  tex = data[t:]
+  tey = y[t:].astype(int).flatten()
+  return tx, ty, tex, tey
 
-def get_flowers(tvts=[0.7,0.15,0.15]):
+def get_flowers():
   df = pd.read_csv("iris_data.csv")
   df = dtree.integer_mapping(None,df,["species"])
   df=df.sample(frac=1)
@@ -151,68 +148,169 @@ def get_flowers(tvts=[0.7,0.15,0.15]):
   #data = StandardScaler().fit_transform(data)
   #data=PCA(n_components=0.9).fit_transform(data)
 
-  l = data.shape[0]
-  tx = data[0:int(l*tvts[0])]
-  ty = y[0:int(l*tvts[0])].astype(int).flatten()
-  tvx = data[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])]
-  tvy = y[int(l*tvts[0]):int(l*tvts[0])+int(l*tvts[1])].astype(int).flatten()
-  tex = data[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])]
-  tey = y[int(l*tvts[1]):int(l*tvts[1])+int(l*tvts[2])].astype(int).flatten()
-  return tx, ty, tvx, tvy, tex, tey
+  t = int(3*data.shape[0]/4)
+
+  tx = data[:t]
+  ty = y[:t].astype(int).flatten()
+  tex = data[t:]
+  tey = y[t:].astype(int).flatten()
+  return tx, ty, tex, tey
 
 
-filename = "svmBlob"
+filename = "svm_spiral"
 tx, ty, tex, tey = get_spirals()
 deeta = pd.DataFrame()
 
-tester = svm(C=5,tol=0.05,kernel="polynomial", max_pases=100, time_cutoff = 120, gamma=2, degree=7)
-tester.fit(tx,ty)
-tester.printSelf()
+#tester = svm(C=5,tol=0.05,kernel="polynomial", max_pases=100, time_cutoff = 120, gamma=2, degree=7)
+#tester.fit(tx,ty)
+#tester.printSelf()
+
+def graphStuff():
+  xrange = np.linspace(-2,2,40)
+  yrange = np.linspace(-2,2,40)
+  pos = list()
+  neg = list()
+  for xs in xrange:
+    for ys in yrange:
+      res = tester.predict(np.array([xs,ys]))
+      #print(f"Result of prediction: {res}")
+      if res > 0:
+        pos.append(np.array([xs,ys]))
+      else:
+        neg.append(np.array([xs,ys]))
+  pos = np.array(pos)
+  neg = np.array(neg)
+
+  if len(pos>0):
+    plt.scatter(pos[:,0], pos[:,1], s=80 ,c="green", marker='s')
+  if len(neg>0):
+    plt.scatter(neg[:,0], neg[:,1], s=80, c="red", marker='s')
 
 
-xrange = np.linspace(-2,2,40)
-yrange = np.linspace(-2,2,40)
-pos = list()
-neg = list()
-for xs in xrange:
-  for ys in yrange:
-    res = tester.predict(np.array([xs,ys]))
-    #print(f"Result of prediction: {res}")
-    if res > 0:
-      pos.append(np.array([xs,ys]))
-    else:
-      neg.append(np.array([xs,ys]))
-pos = np.array(pos)
-neg = np.array(neg)
+  plt.scatter(tx[:,0], tx[:,1],c="yellow")
 
-if len(pos>0):
-  plt.scatter(pos[:,0], pos[:,1], s=80 ,c="green", marker='s')
-if len(neg>0):
-  plt.scatter(neg[:,0], neg[:,1], s=80, c="red", marker='s')
+  plt.scatter(tex[:,0], tex[:,1], c="blue")
+  plt.title("Kernel: polynomial, C=5, Tolerance 0.05, Degree: 7")
 
-
-plt.scatter(tx[:,0], tx[:,1],c="yellow")
-
-plt.scatter(tex[:,0], tex[:,1], c="blue")
-plt.title("Kernel: polynomial, C=5, Tolerance 0.05, Degree: 7")
-
-plt.show()
+  plt.show()
 
 
 
 
 
-def get_accuracy(deeta):
-  tester = svm(C=5,tol=0.05,kernel="rbf", max_pases=50, time_cutoff = 60, gamma=3)
-  tester.fit(tx,ty)
+def get_accuracy(deeta, x, y, C, kernel, max_passes, time_cutoff, gamma, degree, r):
+
+  chunk = int(x.shape[0]/5)
+  accuracies = list()
+
+  for i in range(5):
+    xte = x[i*chunk:(i+1)*chunk]
+    yte = y[i*chunk:(i+1)*chunk]
+
+    xt = np.concatenate((x[0:i*chunk], x[(i+1)*chunk:]), axis=0)
+    yt = np.concatenate((y[0:i*chunk], y[(i+1)*chunk:]), axis=0)
+
+    tester = svm(C=C,tol=0.05,kernel=kernel, max_pases=max_passes, time_cutoff = time_cutoff, gamma=gamma, degree=degree, r=r)
+    tester.fit(xt,yt)
+
+    for xi in range(yte.shape[0]):
+      tot=0
+      temp = tester.predict(xte[xi])
+      if temp == y[xi]:
+        tot+=1
+    acc = tot/yte.shape[0]
+    accuracies.append(acc)
+  accuracies = np.array(accuracies)
+
+
   new_row = dict()
-  #new_row["VM1 Train"] = tv1
-  #new_row["VM2 Train"] = tv2
-  #new_row["VM3 Train"] = tv2
-  new_row["VM1 Test"] = 0
-  new_row["VM2 Test"] = 1
-  new_row["VM3 Test"] = 2
-  new_row["Train Time"] = 3
+  new_row["Accuracy"] = np.mean(accuracies)
+  new_row["Std Deviation"] = np.std(accuracies)
+  new_row["C"] = C
+  new_row["kernel"] = kernel
+  new_row["max_passes"] = max_passes
+  new_row["time_cutoff"] = time_cutoff
+  new_row["gamma"] = gamma
+  new_row["degree"] = degree
+  new_row["r"] = r
+  
   deeta=deeta.append(new_row, ignore_index=True)
+  deeta.to_csv(filename+"_temp.csv") 
+  return np.mean(accuracies), deeta
 
+C=[1,3,5]
+max_pases=[50,100]
+
+kernel=["rbf", "polynomial", "dot"] 
+gamma=[2,1,3,4]
+degree=[2,3,4] 
+r=[1,0.85,1.15]
+
+time_cutoff = [30,60,120] 
+
+
+bestScore = 0
+bestParams = list()
+bc = C[0]
+for i,c in enumerate(C):
+  temp, deeta = get_accuracy(deeta,tx,ty,c,kernel[0],max_pases[0],time_cutoff[0], gamma[0], degree[0], r[0])
+  if temp>bestScore:
+    bc=c
+    bestScore = temp
+    bestParams = [c,kernel[0],max_pases[0],time_cutoff[0], gamma[0], degree[0], r[0]]
+print(f"Best score: {bestScore} with params {bestParams}")
+
+bmp = max_pases[0]
+for i,mp in enumerate(max_pases):
+  temp, deeta = get_accuracy(deeta,tx,ty,bc,kernel[0],mp,time_cutoff[0], gamma[0], degree[0], r[0])
+  if temp>bestScore:
+    bmp=mp
+    bestScore = temp
+    bestParams = [bc,kernel[0],mp,time_cutoff[0], gamma[0], degree[0], r[0]]
+print(f"Best score: {bestScore} with params {bestParams}")
+
+bkern = kernel[0]
+bdeg = degree[0]
+bgam = gamma[0]
+
+for k in kernel:
+
+  if(k == "rbf"):
+    print("Checking rbf")
+    for g in gamma:
+      temp, deeta = get_accuracy(deeta,tx,ty,bc,k,bmp,time_cutoff[0], g, bdeg, r[0])
+      if temp>bestScore:
+        bkern=k
+        bgam = g
+        bestScore = temp
+        bestParams = [bc,k,bmp,time_cutoff[0], g, bdeg, r[0]]
+    print(f"Best score: {bestScore} with params {bestParams}")
+  if(k == "dot"):
+    print("Checking dot")
+    temp, deeta = get_accuracy(deeta,tx,ty,bc,k,bmp,time_cutoff[0], bgam, bdeg, r[0])
+    if temp>bestScore:
+      bkern=k
+      bestScore = temp
+      bestParams = [bc,k,bmp,time_cutoff[0], bgam, bdeg, r[0]]
+    print(f"Best score: {bestScore} with params {bestParams}")
+  if(k == "polynomial"):
+    print("Checking polynomial")
+    for d in degree:
+      temp, deeta = get_accuracy(deeta,tx,ty,bc,k,bmp,time_cutoff[0], bgam, d, r[0])
+      if temp>bestScore:
+        bkern=k
+        bdeg = d
+        bestScore = temp
+        bestParams = [bc,k,bmp,time_cutoff[0], bgam, d, r[0]]
+    print(f"Best score: {bestScore} with params {bestParams}")
+btime = time_cutoff[0]
+for t in time_cutoff:
+  temp, deeta = get_accuracy(deeta,tx,ty,bc,bkern,bmp,t, bgam, bdeg, r[0])
+  if temp>bestScore:
+    bmp=mp
+    bestScore = temp
+    bestParams = [bc,bkern,bmp,t, bgam, bdeg, r[0]]
+print(f"Best score: {bestScore} with params {bestParams}")
+
+deeta.to_csv(filename+"_Results.csv") 
 
